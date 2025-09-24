@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Змейка</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-align: center;
+      background: #f5f0e6;
+      margin: 0;
+      padding: 12px;
+      color: #2c2c2c;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin: 10px 0;
+    }
+
+    #game-container {
+      margin: 15px auto;
+      position: relative;
+      max-width: 100%;
+    }
+
+    #game-board {
+      border: 3px solid #5a5a5a;
+      background: #0f1a20;
+      display: block;
+      border-radius: 6px;
+      width: 100%;
+      max-width: 600px;
+      height: auto;
+    }
+
+    #score {
+      font-size: 1.6rem;
+      margin: 12px 0;
+      font-weight: bold;
+      color: #333;
+    }
+
+    #start-btn {
+      padding: 14px 28px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      margin: 12px;
+      transition: background 0.3s;
+      width: 80%;
+      max-width: 300px;
+    }
+
+    #start-btn:hover, #start-btn:focus {
+      background: #45a049;
+    }
+
+    #countdown {
+      font-size: 2.5rem;
+      color: #e74c3c;
+      margin: 12px 0;
+      height: 1.8rem;
+      font-weight: bold;
+    }
+
+    .controls {
+      margin: 18px 0;
+    }
+
+    .controls button {
+      width: 70px;
+      height: 70px;
+      font-size: 1.4rem;
+      margin: 6px;
+      cursor: pointer;
+      background: #ddd;
+      border: 2px solid #777;
+      border-radius: 12px;
+      transition: background 0.2s;
+    }
+
+    .controls button:active {
+      background: #bbb;
+    }
+
+    .row {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    #guide-title {
+      font-size: 1.5rem;
+      margin: 20px 0 10px;
+      cursor: pointer;
+      color: #2c3e50;
+      font-weight: bold;
+    }
+
+    #guide-details {
+      display: none;
+      background: #e0dcd3;
+      padding: 16px;
+      border-radius: 10px;
+      margin: 12px auto;
+      max-width: 600px;
+      line-height: 1.5;
+      font-size: 1rem;
+      color: #444;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+
+    #welcome {
+      font-size: 1.4rem;
+      margin: 12px 0;
+      font-weight: bold;
+      color: #27ae60;
+      padding: 0 10px;
+    }
+
+    max-width.controls button {
+        width: 60px;
+        height: 60px;
+        font-size: 1.2rem;
+        margin: 4px;
+      }
+
+      #guide-title {
+        font-size: 1.4rem;
+      }
+
+      #score {
+        font-size: 1.4rem;
+      }
+
+      #countdown {
+        font-size: 2rem;
+      }
+    
+  </style>
+</head>
+<body>
+  <h1>Игра «Змейка»</h1>
+  <div id="welcome">Выберите, кто вы...</div>
+
+  <div id="guide-title">📖 Руководство пользователя</div>
+  <div id="guide-details">
+    Вас приветствует руководство пользователя
+
+    1) Игра представляет из себя подобие змейки, фрукты представлены в виде 3 фигур
+
+    2) Чтобы начать игру — нажмите кнопку «Начать игру», и после отсчёта начнётся игра
+
+    3) Управление возможно с клавиатуры (WASD / стрелки) или нажатием на кнопки управления
+
+    <strong>!!ВАЖНО!!</strong>
+
+    Каждый раз при достижении 5 очков сложность игры будет увеличиваться: не только размер змейки будет расти, но и её скорость!
+
+    Приятной игры :)
+  </div>
+
+  <div id="score">Очки: 0</div>
+  <button id="start-btn">Начать игру</button>
+  <div id="countdown"></div>
+
+  <div id="game-container">
+    <canvas id="game-board" width="600" height="400"></canvas>
+  </div>
+
+  <div class="controls">
+    <div class="row">
+      <button id="up">↑</button>
+    </div>
+    <div class="row">
+      <button id="left">←</button>
+      <button id="down">↓</button>
+      <button id="right">→</button>
+    </div>
+  </div>
+
+  <script>
+    // === Приветствие ===
+    window.addEventListener('load', () => {
+      const name = prompt("Кто вы?ведите: Денис, Костеныч или оставьте пустым для 'Гость'");
+      const welcomeEl = document.getElementById('welcome');
+      if (name && ['денис', 'костеныч'].includes(name.trim().toLowerCase())) {
+        welcomeEl.textContent = 'О здравствуй, родной!';
+        welcomeEl.style.color = '#27ae60';
+      } else {
+        welcomeEl.textContent = 'Ну привет -_-';
+        welcomeEl.style.color = '#e67e22';
+      }
+    });
+
+    // === Руководство (наведение и тап) ===
+    const guideTitle = document.getElementById('guide-title');
+    const guideDetails = document.getElementById('guide-details');
+
+    guideTitle.addEventListener('mouseenter', () => guideDetails.style.display = 'block');
+    guideDetails.addEventListener('mouseleave', () => guideDetails.style.display = 'none');
+
+    guideTitle.addEventListener('click', (e) => {
+      if (window.innerWidth <= 768) {
+        e.stopPropagation();
+        guideDetails.style.display = guideDetails.style.display === 'block' ? 'none' : 'block';
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth <= 768 && 
+          !guideTitle.contains(e.target) && 
+          !guideDetails.contains(e.target)) {
+        guideDetails.style.display = 'none';
+      }
+    });
+
+    // === Игра ===
+    const canvas = document.getElementById('game-board');
+    const ctx = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('score');
+    const startBtn = document.getElementById('start-btn');
+    const countdownEl = document.getElementById('countdown');
+
+    const gridSize = 20;
+    const gridWidth = canvas.width / gridSize;
+    const gridHeight = canvas.height / gridSize;
+
+    let snake = [];
+    let direction = 'right';
+    let nextDirection = 'right';
+    let food = {};
+    let score = 0;
+    let gameSpeed = 150;
+    let gameRunning = false;
+    let gameLoop;
+
+    function initSnake() {
+      snake = [
+        { x: 5, y: 10 },
+        { x: 4, y: 10 },
+        { x: 3, y: 10 }
+      ];
+      direction = 'right';
+      nextDirection = 'right';
+      score = 0;
+      scoreDisplay.textContent = 'Очки: 0';
+      gameSpeed = 150;
+    }
+
+    function generateFood() {
+      const x = Math.floor(Math.random() * gridWidth);
+      const y = Math.floor(Math.random() * gridHeight);
+      for (let seg of snake) {
+        if (seg.x === x && seg.y === y) return generateFood();
+      }
+      food = { x, y, shape: Math.floor(Math.random() * 3) };
+    }
+
+    function draw() {
+      ctx.fillStyle = '#0f1a20';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      snake.forEach((seg, i) => {
+        ctx.fillStyle = i === 0 ? '#4CAF50' : '#8BC34A';
+        ctx.fillRect(seg.x * gridSize, seg.y * gridSize, gridSize, gridSize);
+        ctx.strokeStyle = '#333';
+        ctx.strokeRect(seg.x * gridSize, seg.y * gridSize, gridSize, gridSize);
+      });
+
+      ctx.fillStyle = '#FF5252';
+      const fx = food.x * gridSize, fy = food.y * gridSize, s = gridSize - 4;
+      switch (food.shape) {
+        case 0:
+          ctx.beginPath();
+          ctx.arc(fx + gridSize/2, fy + gridSize/2, s/2, 0, Math.PI*2);
+          ctx.fill(); break;
+        case 1:
+          ctx.fillRect(fx + 2, fy + 2, s, s); break;
+        case 2:
+          ctx.beginPath();
+          ctx.moveTo(fx + gridSize/2, fy + 2);
+          ctx.lineTo(fx + 2, fy + gridSize - 2);
+          ctx.lineTo(fx + gridSize - 2, fy + gridSize - 2);
+          ctx.closePath();
+          ctx.fill(); break;
+      }
+    }
+
+    function update() {
+      direction = nextDirection;
+      const head = { ...snake[0] };
+      switch (direction) {
+        case 'up': head.y--; break;
+        case 'down': head.y++; break;
+        case 'left': head.x--; break;
+        case 'right': head.x++; break;
+      }
+
+      if (head.x < 0 || head.x >= gridWidth || head.y < 0 || head.y >= gridHeight) return gameOver();
+      for (let seg of snake) if (seg.x === head.x && seg.y === head.y) return gameOver();
+
+      snake.unshift(head);
+      if (head.x === food.x && head.y === food.y) {
+        score++;
+        scoreDisplay.textContent = `Очки: ${score}`;
+        if (score % 5 === 0) {
+          gameSpeed = Math.max(50, gameSpeed - 20);
+          clearInterval(gameLoop);
+          gameLoop = setInterval(gameStep, gameSpeed);
+        }
+        generateFood();
+      } else {
+        snake.pop();
+      }
+      draw();
+    }
+
+    function gameStep() { if (gameRunning) update(); }
+
+    function gameOver() {
+      gameRunning = false;
+      clearInterval(gameLoop);
+      alert(`Игра окончена! Ваши очки: ${score}`);
+      startBtn.disabled = false;
+    }
+
+    function startCountdown() {
+      startBtn.disabled = true;
+      let c = 3;
+      countdownEl.textContent = c;
+      const iv = setInterval(() => {
+        c--;
+        if (c > 0) countdownEl.textContent = c;
+        else if (c === 0) {
+          countdownEl.textContent = 'GO!';
+          setTimeout(() => {
+            countdownEl.textContent = '';
+            clearInterval(iv);
+            startGame();
+          }, 500);
+        }
+      }, 1000);
+    }
+
+    function startGame() {
+      initSnake();
+      generateFood();
+      gameRunning = true;
+      clearInterval(gameLoop);
+      gameLoop = setInterval(gameStep, gameSpeed);
+    }
+
+    // Управление
+    document.addEventListener('keydown', e => {
+      if (!gameRunning) return;
+      const k = e.key.toLowerCase();
+      if ((k === 'w' || k === 'arrowup') && direction !== 'down') nextDirection = 'up';
+      else if ((k === 's' || k === 'arrowdown') && direction !== 'up') nextDirection = 'down';
+      else if ((k === 'a' || k === 'arrowleft') && direction !== 'right') nextDirection = 'left';
+      else if ((k === 'd' || k === 'arrowright') && direction !== 'left') nextDirection = 'right';
+    });
+
+    ['up','down','left','right'].forEach(dir => {
+      document.getElementById(dir).addEventListener('click', () => {
+        if (!gameRunning) return;
+        if ((dir === 'up' && direction !== 'down') ||
+            (dir === 'down' && direction !== 'up') ||
+            (dir === 'left' && direction !== 'right') ||
+            (dir === 'right' && direction !== 'left')) {
+          nextDirection = dir;
+        }
+      });
+    });
+
+    startBtn.addEventListener('click', startCountdown);
+    initSnake();
+    draw();
+  </script>
+</body>
+</html>
